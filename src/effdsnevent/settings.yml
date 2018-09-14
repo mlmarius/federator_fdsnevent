@@ -1,0 +1,18 @@
+plugins:
+    effdsnevent:
+        is_active: true
+        endpoints:
+            event:
+                backends:
+                    NIEP:
+                        country_code: "RO"
+                        country: "Romania"
+                        name: "National Institute for Earth Physics"
+                        geometry: [[19.50, 49.00], [30.00, 49.00], [30.00, 42.0], [19.50, 42.0], [19.50, 49.00]]
+                        url: "http://eida-sc3.infp.ro/fdsnws/event/1/query"
+                    INGV:
+                        country_code: "IT"
+                        country: "Italy"
+                        name: "ISTITUTO NAZIONALE DI GEOFIZICA E VULCANOLOGIA"
+                        geometry: [[11.78, 43.95], [13.61, 43.95], [13.61, 42.8], [11.78, 42.8], [11.78, 43.95]]
+                        url: "http://isnet-bulletin.fisica.unina.it/cgi-bin/fdsnws/event/1/query"

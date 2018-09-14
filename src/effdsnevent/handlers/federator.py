@@ -288,6 +288,7 @@ class Handler(RequestHandler):
     @use_args(RequestSchema)
     async def get(self, reqargs):
 
+        logging.info("Starting get request")
         try:
             # attempt to define the geographic area for this query
             bounds = geometry.Polygon([
@@ -308,7 +309,6 @@ class Handler(RequestHandler):
 
         urls = serviceindex.get(geometry=bounds, filter_func=ffunc)
         urls = [f"{url.url}?{args}" for url in urls]
-        logger.info(urls)
 
         self.write("<?xml version='1.0' encoding='utf8'?><q:quakeml xmlns='http://quakeml.org/xmlns/bed/1.2' xmlns:q='http://quakeml.org/xmlns/quakeml/1.2'><eventParameters publicID='federated_query'>")
 
@@ -324,9 +324,10 @@ class Handler(RequestHandler):
             logger.warning("Client left. Aborting download from upstream.")
             return
 
-        if dlmgr is not None and len(dlmgr.errors) > 0:
-            self.write('], "errors":[')
-            self.write(','.join(err.to_json() for err in dlmgr.errors))
+        # TODO: what happens if nodes ERR?
+        # if dlmgr is not None and len(dlmgr.errors) > 0:
+        #     self.write('], "errors":[')
+        #     self.write(','.join(err.to_json() for err in dlmgr.errors))
 
         self.write('</eventParameters></q:quakeml>')
 

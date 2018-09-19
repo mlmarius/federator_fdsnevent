@@ -288,7 +288,6 @@ class Handler(RequestHandler):
     @use_args(RequestSchema)
     async def get(self, reqargs):
 
-        logging.info("Starting get request")
         try:
             # attempt to define the geographic area for this query
             bounds = geometry.Polygon([

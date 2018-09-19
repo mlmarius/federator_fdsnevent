@@ -272,7 +272,7 @@ def response_validator(resp, **kwargs):
     status = kwargs.get('status', 200)
     if resp.headers.get('Content-Type') != content_type or resp.status != status:
         raise DownloadError(
-            "Invalid json response from NFO",
+            "Invalid xml response from NFO",
             url=resp.url
         )
 
@@ -298,8 +298,11 @@ class Handler(RequestHandler):
         except Exception as e:
             bounds = None
 
-        # reqargs['starttime'] = reqargs['starttime'].strftime('%Y-%m-%dT%H:%M:%S.000Z')
-        # reqargs['endtime'] = reqargs['endtime'].strftime('%Y-%m-%dT%H:%M:%S.000Z')
+        for key in ['starttime', 'endtime']:
+            try:
+                reqargs[key] = reqargs[key].strftime('%Y-%m-%dT%H:%M:%S.000Z')
+            except Exception:
+                pass
 
         self.set_header('Content-Type', self.RESPONSE_TYPE)
         args = urllib.parse.urlencode(reqargs, safe=':')
@@ -324,10 +327,9 @@ class Handler(RequestHandler):
             logger.warning("Client left. Aborting download from upstream.")
             return
 
-        # TODO: what happens if nodes ERR?
-        # if dlmgr is not None and len(dlmgr.errors) > 0:
-        #     self.write('], "errors":[')
-        #     self.write(','.join(err.to_json() for err in dlmgr.errors))
+        if dlmgr is not None and len(dlmgr.errors) > 0:
+            for error in dlmgr.errors:
+                logger.warning(str(error))
 
         self.write('</eventParameters></q:quakeml>')
 

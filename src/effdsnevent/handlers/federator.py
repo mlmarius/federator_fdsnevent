@@ -112,9 +112,18 @@ class RequestSchema(Schema):
     #     }
     # )
 
-    includeallorigins = fields.Boolean(
-        default=False,
-        missing=False,
+    # includeallorigins = fields.Boolean(
+    #     default=False,
+    #     missing=False,
+    #     metadata={
+    #         "label": "Should all origins be included?"
+    #     }
+    # )
+
+    includeallorigins = fields.String(
+        validate=validate.OneOf(['true', 'false']),
+        default='false',
+        missing='false',
         metadata={
             "label": "Should all origins be included?"
         }
@@ -129,9 +138,10 @@ class RequestSchema(Schema):
     #     }
     # )
 
-    includeallmagnitudes = fields.Boolean(
-        default=False,
-        missing=False,
+    includeallmagnitudes = fields.String(
+        validate=validate.OneOf(['true', 'false']),
+        default='false',
+        missing='false',
         metadata={
             "label": "Should all magnitudes be included?"
         }
@@ -146,9 +156,10 @@ class RequestSchema(Schema):
     #     }
     # )
 
-    includearrivals = fields.Boolean(
-        default=False,
-        missing=False,
+    includearrivals  = fields.String(
+        validate=validate.OneOf(['true', 'false']),
+        default='false',
+        missing='false',
         metadata={
             "label": "Should arrivals be included?"
         }

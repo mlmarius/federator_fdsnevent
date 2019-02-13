@@ -103,23 +103,6 @@ class RequestSchema(Schema):
         description="Maximum magnitude"
     )
 
-    # includeallorigins = fields.Integer(
-    #     validate=validate.OneOf([0, 1]),
-    #     default=0,
-    #     missing=0,
-    #     metadata={
-    #         "label": "Should all origins be included?"
-    #     }
-    # )
-
-    # includeallorigins = fields.Boolean(
-    #     default=False,
-    #     missing=False,
-    #     metadata={
-    #         "label": "Should all origins be included?"
-    #     }
-    # )
-
     includeallorigins = fields.String(
         validate=validate.OneOf(['true', 'false']),
         default='false',
@@ -129,15 +112,6 @@ class RequestSchema(Schema):
         }
     )
 
-    # includeallmagnitudes = fields.Integer(
-    #     validate=validate.OneOf([0, 1]),
-    #     default=0,
-    #     missing=0,
-    #     metadata={
-    #         "label": "Should all magnitudes be included?"
-    #     }
-    # )
-
     includeallmagnitudes = fields.String(
         validate=validate.OneOf(['true', 'false']),
         default='false',
@@ -146,15 +120,6 @@ class RequestSchema(Schema):
             "label": "Should all magnitudes be included?"
         }
     )
-
-    # includearrivals = fields.Integer(
-    #     validate=validate.OneOf([0, 1]),
-    #     default=0,
-    #     missing=0,
-    #     metadata={
-    #         "label": "Should arrivals be included?"
-    #     }
-    # )
 
     includearrivals  = fields.String(
         validate=validate.OneOf(['true', 'false']),

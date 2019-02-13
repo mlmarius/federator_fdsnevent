@@ -103,28 +103,52 @@ class RequestSchema(Schema):
         description="Maximum magnitude"
     )
 
-    includeallorigins = fields.Integer(
-        validate=validate.OneOf([0, 1]),
-        default=0,
-        missing=0,
+    # includeallorigins = fields.Integer(
+    #     validate=validate.OneOf([0, 1]),
+    #     default=0,
+    #     missing=0,
+    #     metadata={
+    #         "label": "Should all origins be included?"
+    #     }
+    # )
+
+    includeallorigins = fields.Boolean(
+        default=False,
+        missing=False,
         metadata={
             "label": "Should all origins be included?"
         }
     )
 
-    includeallmagnitudes = fields.Integer(
-        validate=validate.OneOf([0, 1]),
-        default=0,
-        missing=0,
+    # includeallmagnitudes = fields.Integer(
+    #     validate=validate.OneOf([0, 1]),
+    #     default=0,
+    #     missing=0,
+    #     metadata={
+    #         "label": "Should all magnitudes be included?"
+    #     }
+    # )
+
+    includeallmagnitudes = fields.Boolean(
+        default=False,
+        missing=False,
         metadata={
             "label": "Should all magnitudes be included?"
         }
     )
 
-    includearrivals = fields.Integer(
-        validate=validate.OneOf([0, 1]),
-        default=0,
-        missing=0,
+    # includearrivals = fields.Integer(
+    #     validate=validate.OneOf([0, 1]),
+    #     default=0,
+    #     missing=0,
+    #     metadata={
+    #         "label": "Should arrivals be included?"
+    #     }
+    # )
+
+    includearrivals = fields.Boolean(
+        default=False,
+        missing=False,
         metadata={
             "label": "Should arrivals be included?"
         }
@@ -292,9 +316,10 @@ class Handler(RequestHandler):
             # attempt to define the geographic area for this query
             bounds = geometry.Polygon([
                 (reqargs['minlongitude'], reqargs['minlatitude']), (reqargs['maxlongitude'], reqargs['minlatitude']),
-                (reqargs['maxlongitude'], reqargs['maxlatitude']), (reqargs['minlongitude'], reqargs['maxlatutide'])
+                (reqargs['maxlongitude'], reqargs['maxlatitude']), (reqargs['minlongitude'], reqargs['maxlatitude'])
             ])
         except Exception as e:
+            logger.error(e, exc_info=True)
             bounds = None
 
         for key in ['starttime', 'endtime']:
@@ -319,7 +344,7 @@ class Handler(RequestHandler):
             # ask a dload manager to perform the downloads for us
             # and store the download errors
             dlmgr = downloader.DownloadManager(*urls)
-            async for chunk in dlmgr.fetch(extractor=extractor, response_validator=response_validator):
+            async for chunk in dlmgr.fetch(extractor=extractor, response_validator=response_validator, timeout_total=60):
                 self.write(chunk)
                 await self.flush()
         except tornado.iostream.StreamClosedError:

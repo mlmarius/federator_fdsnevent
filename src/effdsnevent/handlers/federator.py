@@ -4,6 +4,7 @@ from eposfederator.libs import downloader, serviceindex
 from eposfederator.libs.base.schema import Schema
 from eposfederator.libs.downloader import DownloadError
 import tornado.iostream
+import tornado.web
 from marshmallow import fields, validate
 from webargs.tornadoparser import use_args
 from shapely import geometry
@@ -121,7 +122,7 @@ class RequestSchema(Schema):
         }
     )
 
-    includearrivals  = fields.String(
+    includearrivals = fields.String(
         validate=validate.OneOf(['true', 'false']),
         default='false',
         missing='false',
@@ -176,8 +177,8 @@ class RequestSchema(Schema):
         description="Updated after"
     )
 
-    type = fields.String(
-        validate=validate.OneOf(["xml", "txt"]),
+    format = fields.String(
+        validate=validate.OneOf(["xml", "text"]),
         default="xml",
         missing="xml",
         metadata={
@@ -228,7 +229,37 @@ class RequestSchema(Schema):
     )
 
 
-async def extractor(resp, **kwargs):
+async def extractor_text(resp, **kwargs):
+    chunk_size = kwargs.get('chunk_size', 2000)
+    # inside_object = False
+    obj_end_pattern = "\n"
+    buff = ''
+    while True:
+        crt = await resp.content.read(chunk_size)
+        if crt:
+            buff += crt.decode()
+        else:
+            break
+
+        if buff is '':
+            break
+
+        while True:
+            try:
+                newline_idx = buff.index(obj_end_pattern)
+            except ValueError:
+                break
+
+            item = buff[:newline_idx]
+            buff = buff[newline_idx+1:]
+            yield item+"\n"
+
+
+def response_validator_text(resp, **kwargs):
+    return
+
+
+async def extractor_xml(resp, **kwargs):
     chunk_size = kwargs.get('chunk_size', 2000)
     inside_object = False
     obj_start_pattern = '<event '
@@ -267,7 +298,7 @@ async def extractor(resp, **kwargs):
                     break
 
 
-def response_validator(resp, **kwargs):
+def response_validator_xml(resp, **kwargs):
     content_type = kwargs.get('content-type', 'application/xml')
     status = kwargs.get('status', 200)
     if resp.headers.get('Content-Type') != content_type or resp.status != status:
@@ -285,7 +316,7 @@ class Handler(RequestHandler):
     REQUEST_SCHEMA = RequestSchema
     ROUTE = "event"
 
-    @use_args(RequestSchema)
+    @use_args(RequestSchema)  # noqa
     async def get(self, reqargs):
 
         try:
@@ -304,7 +335,23 @@ class Handler(RequestHandler):
             except Exception:
                 pass
 
-        self.set_header('Content-Type', self.RESPONSE_TYPE)
+        format = reqargs['format']
+        if format == 'xml':
+            self.set_header('Content-Type', self.RESPONSE_TYPE)
+            extractor = extractor_xml
+            response_validator = response_validator_xml
+            response_head = "<?xml version='1.0' encoding='utf8'?><q:quakeml xmlns='http://quakeml.org/xmlns/bed/1.2' xmlns:q='http://quakeml.org/xmlns/quakeml/1.2'><eventParameters publicID='federated_query'>"
+            response_footer = "</eventParameters></q:quakeml>"
+        elif format == "text":
+            self.set_header('Content-Type', "plain/text")
+            extractor = extractor_text
+            response_validator = response_validator_text
+            response_head = ""
+            response_footer = ""
+        else:
+            raise tornado.web.HTTPError()
+            # raise Exception('no valid format specified')
+
         args = urllib.parse.urlencode(reqargs, safe=':')
 
         def ffunc(wspointer):
@@ -313,7 +360,7 @@ class Handler(RequestHandler):
         urls = serviceindex.get(geometry=bounds, filter_func=ffunc)
         urls = [f"{url.url}?{args}" for url in urls]
 
-        self.write("<?xml version='1.0' encoding='utf8'?><q:quakeml xmlns='http://quakeml.org/xmlns/bed/1.2' xmlns:q='http://quakeml.org/xmlns/quakeml/1.2'><eventParameters publicID='federated_query'>")
+        self.write(response_head)
 
         dlmgr = None
         try:
@@ -331,6 +378,6 @@ class Handler(RequestHandler):
             for error in dlmgr.errors:
                 logger.warning(str(error))
 
-        self.write('</eventParameters></q:quakeml>')
+        self.write(response_footer)
 
         await self.flush()
